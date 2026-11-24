@@ -1,12 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   deleteUser,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   reauthenticateWithPopup,
+  signInWithCredential,
   signInWithPopup,
   signOut,
   User,
 } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
   collection,
   deleteDoc,
@@ -105,6 +110,41 @@ import {
 
 const GOOGLE_MAPS_API_KEY =
   (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) || '';
+
+// Google sign-in: browsers use the normal popup. The Android app cannot show a
+// popup, so it uses native Google sign-in and hands the token to Firebase.
+const isNativeApp = Capacitor.isNativePlatform();
+
+async function getNativeGoogleCredential() {
+  const result = await FirebaseAuthentication.signInWithGoogle();
+  const idToken = result.credential?.idToken;
+  if (!idToken) {
+    throw new Error('Google sign-in did not return a token. Please try again.');
+  }
+  return GoogleAuthProvider.credential(
+    idToken,
+    result.credential?.accessToken ?? undefined
+  );
+}
+
+async function startGoogleSignIn(): Promise<void> {
+  if (!isNativeApp) {
+    await signInWithPopup(auth, googleProvider);
+    return;
+  }
+  await signInWithCredential(auth, await getNativeGoogleCredential());
+}
+
+async function startGoogleReauth(currentUser: User): Promise<void> {
+  if (!isNativeApp) {
+    await reauthenticateWithPopup(currentUser, googleProvider);
+    return;
+  }
+  await reauthenticateWithCredential(
+    currentUser,
+    await getNativeGoogleCredential()
+  );
+}
 
 type ActiveTab = 'map' | 'trails' | 'hazards' | 'offline';
 type MapLayerMode = 'terrain' | 'satellite' | 'offline-topo';
@@ -428,7 +468,7 @@ export default function App() {
   const handleSignIn = async () => {
     setAuthNotice(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      await startGoogleSignIn();
       showToast('Signed in — live trail sync active');
     } catch (err) {
       setAuthNotice(
@@ -438,6 +478,9 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
+    if (isNativeApp) {
+      await FirebaseAuthentication.signOut().catch(() => undefined);
+    }
     await signOut(auth);
     showToast('Signed out');
   };
@@ -524,7 +567,7 @@ export default function App() {
           ? String((err as { code?: string }).code)
           : '';
       if (authCode === 'auth/requires-recent-login') {
-        await reauthenticateWithPopup(currentUser, googleProvider);
+        await startGoogleReauth(currentUser);
         await deleteUser(currentUser);
       } else {
         throw err;
