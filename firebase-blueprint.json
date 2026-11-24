@@ -1,0 +1,344 @@
+{
+  "entities": {
+    "HazardReport": {
+      "title": "HazardReport",
+      "description": "Community-reported trail hazard or condition alert in Hamsterley Forest.",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "trailId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "hazardType": {
+          "type": "string",
+          "enum": [
+            "fallen_tree",
+            "deep_mud",
+            "washout",
+            "slick_roots",
+            "ice_frost",
+            "forestry_ops",
+            "clear_trail"
+          ]
+        },
+        "severity": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "resolved"]
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "confirmationsCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "authorId",
+        "authorName",
+        "trailId",
+        "hazardType",
+        "severity",
+        "title",
+        "description",
+        "lat",
+        "lng",
+        "status",
+        "visibility",
+        "confirmationsCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "HazardVote": {
+      "title": "HazardVote",
+      "description": "Atomic confirmation or resolution vote for a trail hazard report.",
+      "type": "object",
+      "properties": {
+        "voterId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "reportId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "voteType": {
+          "type": "string",
+          "enum": ["confirm", "resolve"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["voterId", "reportId", "voteType", "createdAt"]
+    },
+    "DifficultyVote": {
+      "title": "DifficultyVote",
+      "description": "Real-time rider difficulty rating and surface feedback for a Hamsterley Forest route.",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "trailId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "rating": {
+          "type": "number"
+        },
+        "surfaceCondition": {
+          "type": "string",
+          "enum": [
+            "dry_fast",
+            "hero_dirt",
+            "greasy_roots",
+            "muddy_bog",
+            "ice_snow"
+          ]
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 240
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "authorId",
+        "authorName",
+        "trailId",
+        "rating",
+        "surfaceCondition",
+        "comment",
+        "visibility",
+        "createdAt"
+      ]
+    },
+    "RideLog": {
+      "title": "RideLog",
+      "description": "Private GPS ride telemetry summary saved by a rider.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "trailId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "trailName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "distanceKm": {
+          "type": "number"
+        },
+        "elevationGainM": {
+          "type": "number"
+        },
+        "durationSec": {
+          "type": "number"
+        },
+        "avgSpeedKmh": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "trailId",
+        "trailName",
+        "distanceKm",
+        "elevationGainM",
+        "durationSec",
+        "avgSpeedKmh",
+        "createdAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private rider settings and offline pack metadata.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "offlinePackVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "offlinePackVersion", "updatedAt"]
+    },
+    "NavPin": {
+      "title": "NavPin",
+      "description": "Custom or community GPS navigation pin dropped on the Hamsterley Forest map.",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "pinKind": {
+          "type": "string",
+          "enum": ["drop_in", "car_park", "waypoint", "meetup"]
+        },
+        "trailId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "authorId",
+        "authorName",
+        "name",
+        "pinKind",
+        "trailId",
+        "lat",
+        "lng",
+        "visibility",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/hazardReports/{reportId}": {
+      "schema": { "$ref": "#/entities/HazardReport" },
+      "description": "Community trail hazards and condition reports."
+    },
+    "/hazardReports/{reportId}/votes/{voterId}": {
+      "schema": { "$ref": "#/entities/HazardVote" },
+      "description": "Per-user atomic confirmation or resolution votes on hazard reports."
+    },
+    "/difficultyVotes/{voteId}": {
+      "schema": { "$ref": "#/entities/DifficultyVote" },
+      "description": "Real-time rider difficulty ratings and surface condition votes."
+    },
+    "/rides/{rideId}": {
+      "schema": { "$ref": "#/entities/RideLog" },
+      "description": "Private GPS ride summaries owned by each rider."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private rider preferences and offline pack state."
+    },
+    "/navPins/{pinId}": {
+      "schema": { "$ref": "#/entities/NavPin" },
+      "description": "Custom navigation pins dropped by riders for drop-ins, meetups, and car parks."
+    }
+  }
+}

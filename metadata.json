@@ -1,0 +1,6 @@
+{
+  "name": "HamsterleyMTB",
+  "description": "Offline-ready GPS mountain bike trail navigation, live community hazard reporting, and real-time route difficulty ratings for Hamsterley Forest.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

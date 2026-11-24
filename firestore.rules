@@ -1,0 +1,412 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 4.1: Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitive Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedSignedIn() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidHazardType(t) {
+      return t in [
+        'fallen_tree',
+        'deep_mud',
+        'washout',
+        'slick_roots',
+        'ice_frost',
+        'forestry_ops',
+        'clear_trail'
+      ];
+    }
+
+    function isValidSurfaceCondition(s) {
+      return s in [
+        'dry_fast',
+        'hero_dirt',
+        'greasy_roots',
+        'muddy_bog',
+        'ice_snow'
+      ];
+    }
+
+    // Pillar 2: Validation Blueprints
+    function isValidHazardReport(data) {
+      return data.keys().hasAll([
+        'authorId',
+        'authorName',
+        'trailId',
+        'hazardType',
+        'severity',
+        'title',
+        'description',
+        'lat',
+        'lng',
+        'status',
+        'visibility',
+        'confirmationsCount',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'authorId',
+        'authorName',
+        'trailId',
+        'hazardType',
+        'severity',
+        'title',
+        'description',
+        'lat',
+        'lng',
+        'status',
+        'visibility',
+        'confirmationsCount',
+        'createdAt',
+        'updatedAt'
+      ])
+      && isValidId(data.authorId)
+      && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60
+      && isValidId(data.trailId) && data.trailId.size() <= 64
+      && isValidHazardType(data.hazardType)
+      && data.severity is int && data.severity >= 1 && data.severity <= 4
+      && data.title is string && data.title.size() >= 3 && data.title.size() <= 100
+      && data.description is string && data.description.size() >= 1 && data.description.size() <= 400
+      && data.lat is number && data.lat >= 54.58 && data.lat <= 54.76
+      && data.lng is number && data.lng >= -2.05 && data.lng <= -1.75
+      && data.status in ['active', 'resolved']
+      && data.visibility == 'public'
+      && data.confirmationsCount is int && data.confirmationsCount >= 0 && data.confirmationsCount <= 10000
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidHazardVote(data, reportId, voteId) {
+      return data.keys().hasAll(['voterId', 'reportId', 'voteType', 'createdAt'])
+      && data.keys().hasOnly(['voterId', 'reportId', 'voteType', 'createdAt'])
+      && isValidId(data.voterId)
+      && isValidId(data.reportId)
+      && data.reportId == reportId
+      && data.voteType in ['confirm', 'resolve']
+      && voteId == (data.voteType + '_' + data.voterId)
+      && data.createdAt is timestamp;
+    }
+
+    function isValidDifficultyVote(data) {
+      return data.keys().hasAll([
+        'authorId',
+        'authorName',
+        'trailId',
+        'rating',
+        'surfaceCondition',
+        'comment',
+        'visibility',
+        'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'authorId',
+        'authorName',
+        'trailId',
+        'rating',
+        'surfaceCondition',
+        'comment',
+        'visibility',
+        'createdAt'
+      ])
+      && isValidId(data.authorId)
+      && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60
+      && isValidId(data.trailId) && data.trailId.size() <= 64
+      && data.rating is int && data.rating >= 1 && data.rating <= 5
+      && isValidSurfaceCondition(data.surfaceCondition)
+      && data.comment is string && data.comment.size() <= 240
+      && data.visibility == 'public'
+      && data.createdAt is timestamp;
+    }
+
+    function isValidRideLog(data) {
+      return data.keys().hasAll([
+        'userId',
+        'trailId',
+        'trailName',
+        'distanceKm',
+        'elevationGainM',
+        'durationSec',
+        'avgSpeedKmh',
+        'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'userId',
+        'trailId',
+        'trailName',
+        'distanceKm',
+        'elevationGainM',
+        'durationSec',
+        'avgSpeedKmh',
+        'createdAt'
+      ])
+      && isValidId(data.userId)
+      && isValidId(data.trailId) && data.trailId.size() <= 64
+      && data.trailName is string && data.trailName.size() >= 1 && data.trailName.size() <= 100
+      && data.distanceKm is number && data.distanceKm >= 0 && data.distanceKm <= 500
+      && data.elevationGainM is number && data.elevationGainM >= 0 && data.elevationGainM <= 15000
+      && data.durationSec is number && data.durationSec >= 0 && data.durationSec <= 86400
+      && data.avgSpeedKmh is number && data.avgSpeedKmh >= 0 && data.avgSpeedKmh <= 120
+      && data.createdAt is timestamp;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'offlinePackVersion', 'updatedAt'])
+      && data.keys().hasOnly(['uid', 'displayName', 'offlinePackVersion', 'updatedAt'])
+      && isValidId(data.uid)
+      && data.uid == userId
+      && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60
+      && data.offlinePackVersion is string && data.offlinePackVersion.size() >= 1 && data.offlinePackVersion.size() <= 20
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidNavPin(data) {
+      return data.keys().hasAll([
+        'authorId',
+        'authorName',
+        'name',
+        'pinKind',
+        'trailId',
+        'lat',
+        'lng',
+        'visibility',
+        'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'authorId',
+        'authorName',
+        'name',
+        'pinKind',
+        'trailId',
+        'lat',
+        'lng',
+        'visibility',
+        'createdAt'
+      ])
+      && isValidId(data.authorId)
+      && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60
+      && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+      && data.pinKind in ['drop_in', 'car_park', 'waypoint', 'meetup']
+      && isValidId(data.trailId) && data.trailId.size() <= 64
+      && data.lat is number && data.lat >= 54.58 && data.lat <= 54.76
+      && data.lng is number && data.lng >= -2.05 && data.lng <= -1.75
+      && data.visibility in ['public', 'private']
+      && data.createdAt is timestamp;
+    }
+
+    // Collection 1: Community Hazard Reports
+    match /hazardReports/{reportId} {
+      allow get: if isSignedIn()
+        && isValidId(reportId)
+        && existing().visibility == 'public'
+        && existing().status in ['active', 'resolved'];
+
+      allow list: if isSignedIn()
+        && resource.data.visibility == 'public';
+
+      allow create: if isVerifiedSignedIn()
+        && isValidId(reportId)
+        && isValidHazardReport(incoming())
+        && incoming().authorId == request.auth.uid
+        && incoming().status == 'active'
+        && incoming().confirmationsCount == 1
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedSignedIn()
+        && isValidId(reportId)
+        && isValidHazardReport(incoming())
+        && existing().status == 'active'
+        && incoming().authorId == existing().authorId
+        && incoming().trailId == existing().trailId
+        && incoming().visibility == existing().visibility
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Author edits active hazard details
+          (
+            existing().authorId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'severity', 'hazardType', 'updatedAt'])
+          )
+          ||
+          // Action 2: Rider confirms hazard atomically with a confirm vote document
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['confirmationsCount', 'updatedAt'])
+            && incoming().confirmationsCount == existing().confirmationsCount + 1
+            && !exists(/databases/$(database)/documents/hazardReports/$(reportId)/votes/$('confirm_' + request.auth.uid))
+            && existsAfter(/databases/$(database)/documents/hazardReports/$(reportId)/votes/$('confirm_' + request.auth.uid))
+            && getAfter(/databases/$(database)/documents/hazardReports/$(reportId)/votes/$('confirm_' + request.auth.uid)).data.voteType == 'confirm'
+          )
+          ||
+          // Action 3: Author or rider marks active hazard resolved atomically with a resolve vote
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+            && incoming().status == 'resolved'
+            && (
+              existing().authorId == request.auth.uid
+              || (
+                existsAfter(/databases/$(database)/documents/hazardReports/$(reportId)/votes/$('resolve_' + request.auth.uid))
+                && getAfter(/databases/$(database)/documents/hazardReports/$(reportId)/votes/$('resolve_' + request.auth.uid)).data.voteType == 'resolve'
+              )
+            )
+          )
+        );
+
+      allow delete: if isVerifiedSignedIn()
+        && isValidId(reportId)
+        && existing().authorId == request.auth.uid;
+
+      // Subcollection: Votes (Master Gate checks parent hazardReport)
+      match /votes/{voteId} {
+        allow get: if isSignedIn()
+          && isValidId(reportId)
+          && isValidId(voteId)
+          && (voteId == ('confirm_' + request.auth.uid) || voteId == ('resolve_' + request.auth.uid))
+          && exists(/databases/$(database)/documents/hazardReports/$(reportId));
+
+        allow list: if false;
+
+        allow create: if isVerifiedSignedIn()
+          && isValidId(reportId)
+          && isValidId(voteId)
+          && isValidHazardVote(incoming(), reportId, voteId)
+          && incoming().voterId == request.auth.uid
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/hazardReports/$(reportId))
+          && get(/databases/$(database)/documents/hazardReports/$(reportId)).data.status == 'active';
+
+        allow update, delete: if false;
+      }
+    }
+
+    // Collection 2: Real-Time Difficulty Votes
+    match /difficultyVotes/{voteId} {
+      allow get: if isSignedIn()
+        && isValidId(voteId)
+        && existing().visibility == 'public';
+
+      allow list: if isSignedIn()
+        && resource.data.visibility == 'public';
+
+      allow create: if isVerifiedSignedIn()
+        && isValidId(voteId)
+        && isValidDifficultyVote(incoming())
+        && incoming().authorId == request.auth.uid
+        && incoming().createdAt == request.time;
+
+      allow update: if isVerifiedSignedIn()
+        && isValidId(voteId)
+        && isValidDifficultyVote(incoming())
+        && existing().authorId == request.auth.uid
+        && incoming().authorId == existing().authorId
+        && incoming().trailId == existing().trailId
+        && incoming().visibility == existing().visibility
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'surfaceCondition', 'comment']);
+
+      allow delete: if isVerifiedSignedIn()
+        && isValidId(voteId)
+        && existing().authorId == request.auth.uid;
+    }
+
+    // Collection 3: Private Rider GPS Ride Logs
+    match /rides/{rideId} {
+      allow get: if isSignedIn()
+        && isValidId(rideId)
+        && existing().userId == request.auth.uid;
+
+      allow list: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isVerifiedSignedIn()
+        && isValidId(rideId)
+        && isValidRideLog(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time;
+
+      allow update: if false;
+
+      allow delete: if isVerifiedSignedIn()
+        && isValidId(rideId)
+        && existing().userId == request.auth.uid;
+    }
+
+    // Collection 4: Private Rider Preferences
+    match /users/{userId} {
+      allow get: if isSignedIn()
+        && isValidId(userId)
+        && userId == request.auth.uid;
+
+      allow list: if false;
+
+      allow create: if isVerifiedSignedIn()
+        && isValidId(userId)
+        && userId == request.auth.uid
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == request.auth.uid
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedSignedIn()
+        && isValidId(userId)
+        && userId == request.auth.uid
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'offlinePackVersion', 'updatedAt']);
+
+      allow delete: if isVerifiedSignedIn()
+        && isValidId(userId)
+        && userId == request.auth.uid;
+    }
+
+    // Collection 5: Navigation Pins (Drop-Ins, Meetups, Car Parks & Custom Waypoints)
+    match /navPins/{pinId} {
+      allow get: if isSignedIn()
+        && isValidId(pinId)
+        && (existing().visibility == 'public' || existing().authorId == request.auth.uid);
+
+      allow list: if isSignedIn()
+        && (resource.data.visibility == 'public' || resource.data.authorId == request.auth.uid);
+
+      allow create: if isVerifiedSignedIn()
+        && isValidId(pinId)
+        && isValidNavPin(incoming())
+        && incoming().authorId == request.auth.uid
+        && incoming().createdAt == request.time;
+
+      allow update: if isVerifiedSignedIn()
+        && isValidId(pinId)
+        && isValidNavPin(incoming())
+        && existing().authorId == request.auth.uid
+        && incoming().authorId == existing().authorId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'pinKind', 'trailId', 'lat', 'lng', 'visibility']);
+
+      allow delete: if isVerifiedSignedIn()
+        && isValidId(pinId)
+        && existing().authorId == request.auth.uid;
+    }
+  }
+}
