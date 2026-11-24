@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "924454585621",
+    "project_id": "funky-haven-n4cnq",
+    "storage_bucket": "funky-haven-n4cnq.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:924454585621:android:685505af781b6008c1151c",
+        "android_client_info": {
+          "package_name": "com.hamsterleymtb.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "924454585621-guurverro1vvvur7utq49jkbcmigmmop.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hamsterleymtb.app",
+            "certificate_hash": "f82af195ac64baecc9a928f0a75298aa328244e4"
+          }
+        },
+        {
+          "client_id": "924454585621-ckblrfi8oo3k5sjaqe60odcjileemef3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-5nm2vC9ZZv4In29uI9Em_Uy_raaYWK0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "924454585621-ckblrfi8oo3k5sjaqe60odcjileemef3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
