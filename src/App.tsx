@@ -135,6 +135,11 @@ async function startGoogleSignIn(): Promise<void> {
   await signInWithCredential(auth, await getNativeGoogleCredential());
 }
 
+// Opens Google Maps (app or browser) with turn-by-turn driving directions.
+function directionsUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+}
+
 async function startGoogleReauth(currentUser: User): Promise<void> {
   if (!isNativeApp) {
     await reauthenticateWithPopup(currentUser, googleProvider);
@@ -1754,6 +1759,17 @@ export default function App() {
                                   {isNavLocked ? 'Locked' : 'Nav Pin'}
                                 </button>
                               )}
+                              {dropInPin && (
+                                <a
+                                  href={directionsUrl(dropInPin.lat, dropInPin.lng)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="min-h-[44px] px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 whitespace-nowrap cursor-pointer border border-[#DDE2DC] bg-white text-[#141A17] hover:bg-[#FAFBF9]"
+                                >
+                                  <Navigation className="w-3.5 h-3.5 text-[#0F766E]" />
+                                  Directions
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1887,14 +1903,25 @@ export default function App() {
                         </span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveNavTarget(null)}
-                      className="text-[11px] font-semibold text-white/80 hover:text-white flex items-center gap-1 cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Clear Target
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a
+                        href={directionsUrl(activeNavTarget.lat, activeNavTarget.lng)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#14B8A6] text-[#06231F] text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-[#5EEAD4]"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        Get Directions
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setActiveNavTarget(null)}
+                        className="text-[11px] font-semibold text-white/80 hover:text-white flex items-center gap-1 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Clear Target
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   gps.nextWaypointName && (
